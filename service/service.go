@@ -5,7 +5,6 @@ import (
 
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcec/v2/schnorr/musig2"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
 )
 
 type Service struct {
@@ -50,7 +49,7 @@ type Signer struct {
 	PubNonce [musig2.PubNonceSize]byte
 }
 
-func (s *Session) Sign(msg []byte, signs []*Signer) (*musig2.PartialSignature, error) {
+func (s *Session) Sign(msgHash [32]byte, signs []*Signer) (*musig2.PartialSignature, error) {
 
 	var pubKeys []*btcec.PublicKey
 	for _, sign := range signs {
@@ -89,8 +88,6 @@ func (s *Session) Sign(msg []byte, signs []*Signer) (*musig2.PartialSignature, e
 		}
 		fmt.Println("have all nonce", haveAll)
 	}
-
-	msgHash := chainhash.DoubleHashH(msg)
 
 	var opts []musig2.SignOption
 	opts = append(opts, musig2.WithSortedKeys())

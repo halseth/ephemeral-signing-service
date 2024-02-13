@@ -111,7 +111,7 @@ func run2() error {
 			})
 		}
 
-		partial, err := co.Sign(msg, coSigners)
+		partial, err := co.Sign(msgHash, coSigners)
 		if err != nil {
 			fmt.Println("here3", err)
 			return err
