@@ -281,6 +281,7 @@ e = H(R, X', msg)
 $$
 
 Given $b$, $e$ and $c_i$, the signers can now sign:
+
 $$
 s_1 = r^1_1 + b * r^2_1 + e * c_1 * x_1 \\
 s_2 = r^1_2 + b * r^2_2 + e * c_2 * x_2
