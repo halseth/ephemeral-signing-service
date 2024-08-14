@@ -395,6 +395,7 @@ $b$, $c_1$ and $e_1$ is sent to signer 1.
 $b$, $c_2$ and $e_2$ is sent to signer 2.
 
 Signers can now sign:
+
 $$
 \begin{aligned}
 s'_1 &= r^1_1 + b * r^2_1 + e_1 * c_1 * x_1 \\
