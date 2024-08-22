@@ -11,7 +11,7 @@ to mitigate this problem has been devised, but they often involve complex and
 expensive infrastructure, hardware and software[citation].
 
 A second drawback is that the amount to deposit to a pre-signed vault is static,
-and one risk money getting stucj if the deposit transaction is not exactly as
+and one risk money getting stuck if the deposit transaction is not exactly as
 assumed, or the vault address is reused.
 
 In this post we aim to mitigate these two problems in using pre-signed
@@ -389,10 +389,11 @@ Blinded message:
 
 $$
 e_1 = e + \beta_1 \\
-e_2 = e + \beta_2 \\
+e_2 = e + \beta_2 
 $$
 
 $b$, $c_1$ and $e_1$ is sent to signer 1.
+
 $b$, $c_2$ and $e_2$ is sent to signer 2.
 
 Signers can now sign:
