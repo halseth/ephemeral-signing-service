@@ -475,6 +475,152 @@ client) are signed by each signer's static key.
    preimage to these hashes, but that would require either all other signers or
    the client misbehaving. $e_i$ is blinded.
 
+## Ephemeral blinded signing using simplified MuSig2
+We base our scheme on musig2, but we can simplify it quite a bit since we are
+not reusing keys, and we are in a sequential setting.
+
+The client asks the signers for keys and nonces.
+
+The signers choose one nonce each $R_1 = r_1 * G$ and $R_2 = r_2 * G$. Public
+keys are $X_1 = x_1 * G$ and $X_2 = x_2 * G$.
+
+The client uses all the signers' public values to generate the MuSig2 factors
+that each signer would create in the regular MuSig2 protocol:
+
+$$
+\begin{aligned}
+l = H(X_1|X_2) \\
+c_1 = H(l|X_1) \\
+X'_1 = c_1 * X_1
+\end{aligned}
+$$
+
+
+Aggregate public key: 
+
+$$
+X' = X'_1 + X'_2
+$$
+
+Aggregate nonce:
+
+$$
+R = R_1 + R_2 \\
+$$
+
+Note that we only need a single nonce per signer, since we are operating in a
+sequential setting.
+
+Client generates blinding values $\alpha_1, \beta_1, \alpha_2, \beta_2$, and
+calculates blinded signing nonce:
+
+$$
+R' = R + (\alpha_1 + \alpha_2) * G + (\beta_1 * c_1 * X_1) + (\beta_2 * c_2 * X_2)
+$$
+
+The message that will ultimately be signed is:
+
+$$
+e = H(R', X', tx)
+$$
+
+We now blind the message for each signer, to ensure they don't learn anything
+about the transaction they are signing::
+
+$e_1 = e + \beta_1$ and $e_2 = e + \beta_2$.
+
+$c_1 * e_1$ is sent to signer 1.
+
+$c_2 * e_2$ is sent to signer 2.
+
+TODO: safe to send $c_1 * e_1$ only? Verifier must be able to check that the
+signer is not signing using a rougue key. Attack scenario: client and a signer
+conspires to choose a rogue key. They do this by using a $c_1$ not derived from
+the other keys. But this will be caught by the verifier, since it will see that
+the aggregate public key doesn't check out.
+
+Signers can now sign:
+
+$$
+\begin{aligned}
+s'_1 &= r_1 + e_1 * c_1 * x_1 \\
+    &= r_1 + e * c_1 * x_1 + \beta_1 * c_1 * x_1\\
+s'_2 &= r_2 + + e_2 * c_2 * x_2 \\
+    &= r_2 + e * c_2 * x_2 + \beta_2 * c_2 * x_2
+\end{aligned}
+$$
+
+In addition we have each signer sign their public values and the values
+received from the client using their static key $P$. They will delete the
+ephemeral private keys after signing.
+
+Client unblinds every partial signature:
+
+$$
+\begin{aligned}
+s_1 = s'_1 + \alpha_1 \\
+s_2 = s'_2 + \alpha_2
+\end{aligned}
+$$
+
+Aggregate signature:
+
+$$
+\begin{aligned}
+s   &= s_1 + s_2 \\
+s   &= s'_1 + \alpha_1 + s'_2 + \alpha_2 \\
+    &= (r_1 + e * c_1 * x_1 + \beta_1 * c_1 * x_1) + \alpha_1 + (r_2 + e * c_2 * x_2 + \beta_2 * c_2 * x_2) + \alpha_2 \\
+    &= (r_1 + r_2) + e * (c_1 * x_1 + c_2 * x_2)  + \beta_1 * c_1 * x_1 + \beta_2 * c_2 * x_2 + \alpha_1 + \alpha_2 \\
+\end{aligned}
+$$
+
+Signature check:
+
+$$
+\begin{aligned}
+s*G &= (r_1 + r_2) * G + e * (c_1 * x_1 + c_2 * x_2) * G + \beta_1 * c_1 * x_1 * G + \beta_2 * c_2 * x_2 *G + \alpha_1 *G  + \alpha_2 * G \\
+    &= (R_1 + R_2) + e * (c_1 * X_1 + c_2 * X_2) + \beta_1 * c_1 * X_1 + \beta_2 * c_2 * X_2 + \alpha_1 *G  + \alpha_2 * G \\
+    &= R + (\alpha_1 + \alpha_2) * G + (\beta_1 * c_1 * X_1) + (\beta_2 * c_2 * X_2) + e * (X'_1 + X'_2) \\
+    &= R' + e * X' \\
+\end{aligned}
+$$
+
+making $(R', s)$ a valid signature for aggregate key $X'$.
+
+The verifier then checks that all values check out. In particular, they check
+that the blinded values used by the signers (that they received from the
+client) are signed by each signer's static key.
+
+TODO: more details about what the verifier is doing here.
+
+### Meeting our goals
+1. As in the non-blinded version, without access to all private keys, no
+   additional signatures can be crafted.
+
+2. Unlike regular MuSig2, the signers cannot check the validity of the message,
+   nonce and combined key they are using, since they are blinded. However, we
+   assumed that the protocol is checked by at least one honest verifier, which
+   will take the role of each signer in validating the parameters. The verifier
+   can check that the parameters $b$, $c_i$, $e_i$ derived using sane values,
+   and abort the protocol otherwise. It will also check that he final signature
+   is signing the transaction graph we expect.
+
+3. The verifier can check that all values are being derived correctly, and
+   cross-check the used values with the signatures signed by each signer's
+   static key.  The one thing the verifier cannot know for sure is whether the
+   client is choosing the blinding factors uniformly at random. If it is not,
+   the security will degrade back to non-blinded Musig2, which is still secure,
+   but less private. This is okay, the client software could still leak all
+   this information, and privacy from malicious client is not part of our
+   requirements.
+
+4. The only information the signers receive from the client is $b$, $c_i$ and
+   $e_i$. $b$ and $c_i$ are hashes of information unknown to each individual
+   signer, meaning they are essentially random values. They could learn the
+   preimage to these hashes, but that would require either all other signers or
+   the client misbehaving. $e_i$ is blinded.
+
+
 ### References
 - [1] https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2019-August/017229.html
 - [2] https://jameso.be/vaults.pdf
