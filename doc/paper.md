@@ -3,7 +3,7 @@
 ## Abstract
 We introduce a blinded multi-signature scheme based on Schnorr signatures, that
 together with ephemeral keys forms a practical way for using presigned
-transactions to safely create vaults or other pre-determined transcation
+transactions to safely create vaults or other pre-determined transaction
 graphs.
 
 ## Introduction
@@ -197,8 +197,8 @@ keys after signing:
 
 $$
 \begin{aligned}
-a_1 = H(R_1||X_1||e'_1) \\
-a_2 = H(R_2||X_2||e'_2)
+a_1 = H(R_1|X_1|e'_1) \\
+a_2 = H(R_2|X_2|e'_2)
 \end{aligned}
 $$
 
@@ -242,6 +242,7 @@ client and makes sure that all values check out. In particular, they check all
 steps performed by the client:
 
 $$
+\begin{aligned}
 l = H(X_1|X_2) \\
 c_i = H(l|X_i) \\
 X'_i = c_i * X_i \\
@@ -251,12 +252,19 @@ R' = R + (\alpha_1 + \alpha_2) * G + (\beta_1 * c_1 * X_1) + (\beta_2 * c_2 * X_
 e = H(R', X', tx) \\
 e_i = e + \beta_i \\
 e'_i = e_i * c_i \\
-a_i = H(R_i||X_i||e'_i) \\
+a_i = H(R_i|X_i|e'_i) \\
+\end{aligned}
 $$
 
 And that $(Y_i,t_i)$ is a valid signature for message $a_i$ using key $P_i$.
 Finally, the verifier checks $(R', s)$ is a valid signature the spending
 transaction $tx$.
+
+At this stage the verifier should check the signed transaction graph, making
+sure it hasn't been tampered with. One way to do this would be for the verifier
+to be an offline hardware device with a display, and at this stage it would
+display the transaction graph information on the screen, prompting a human to
+acknowlege it.
 
 ### Meeting our goals
 1. This follows from MuSig2. We can only craft a valid signature for the
