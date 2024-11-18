@@ -288,11 +288,9 @@ acknowlege it.
    this information, and privacy from malicious client is not part of our
    requirements.
 
-4. The only information the signers receive from the client is $b$, $c_i$ and
-   $e_i$. $b$ and $c_i$ are hashes of information unknown to each individual
-   signer, meaning they are essentially random values. They could learn the
-   preimage to these hashes, but that would require either all other signers or
-   the client misbehaving. $e_i$ is blinded.
+4. The only information the signers receive from the client is 
+   $e'_i$, which is blinded: 
+   $e'_i = e_i * c_i = (e + \beta_i) * c_i = e * c_i + \beta_i * c_i$.
 
 ## Practical example
 
