@@ -73,8 +73,10 @@ $$
 Aggregate nonces:
 
 $$
+\begin{aligned}
 R^1 = R^1_A + R^1_B \\
 R^2 = R^2_A + R^2_B \\
+\end{aligned}
 $$
 
 Aggregate public key: 
